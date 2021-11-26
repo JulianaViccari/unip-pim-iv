@@ -1,0 +1,22 @@
+{
+  "Pacientes" : [
+    {
+      "nome": "Henrique Viccari",
+      "idade": 7,
+      "cep": "06445550",
+      "telefone": "9555544444",
+      "ativo": 1
+    },
+    {
+      "nome": "Juliana Viccari",
+      "idade": 34,
+      "cep": "06445550",
+      "telefone": "967645855",
+      "ativo": 1
+    }
+  ]   
+}
+
+
+
+
