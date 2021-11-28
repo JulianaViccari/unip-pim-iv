@@ -3,22 +3,45 @@
 #include <string.h>
 #include <conio.h>
 #include <ctype.h>
+#include <locale.h>
 #define quantidade 50
 
 typedef struct
 {
+  int dia;
+  int mes;
+  int ano;
+} rgData;
+
+typedef struct
+{
   char nome[50];
-  int idade;
   char cep[9];
   char cpf[12];
   char telefone[12];
   char endereco[50];
+  char email[60];
   int ativo;
+  int idade;
+  rgData dataNascimento;
+  rgData dataDiagnostico;
   char comorbidade[20];
 } Paciente;
 
 Paciente pacientes[quantidade];
 
+rgData entradaRgData(char msg[])
+{
+  rgData dt;
+
+  printf("%s (dd/mm/aaa): ", msg);
+  scanf("%d/%d/%d", &dt.dia, &dt.mes, &dt.ano);
+
+  return (dt);
+}
+
+int calculaIdade(rgData nasc, rgData hoje);
+void welcome();
 void altenticacao(); //prototipo da funcao
 void menu();
 void cadastrar();
@@ -29,12 +52,19 @@ void geraArquivoSemComorbidade(Paciente novoPaciente);
 int main(int arg, char const *argv[])
 {
 
+  welcome();
+
   altenticacao();
 
   menu();
 
   return 0;
   getchar();
+}
+void welcome()
+{
+  system("cls");
+  printf("*** Bem vindo ao cadastro de pacientes! *** \n");
 }
 
 void altenticacao()
@@ -45,10 +75,9 @@ void altenticacao()
   char senha1[15];
 
   int continuar = 1;
-
   do
   {
-    printf("--------Entre com Login E Senha---------\n");
+    printf("--------Entre com Login e Senha---------\n");
     printf("LOGIN: ");
     scanf("%s", login1);
 
@@ -57,8 +86,8 @@ void altenticacao()
 
     if (strcmp(login, login1) == 0 && strcmp(senha, senha1) == 0)
     {
-      printf("-- Login realizado com Sucesso --\n");
-      return 1;
+      printf("-- Login realizado com Sucesso --\n\n");
+      continuar = 0;
     }
     else
     {
@@ -73,7 +102,8 @@ void altenticacao()
 
 void menu()
 {
-
+  setlocale(LC_ALL, "");
+  printf(" _-_ Escolha uma opção _-_\n");
   int op;
   do
   {
@@ -88,6 +118,16 @@ void menu()
       break;
     }
   } while (op != 0);
+}
+
+int calculaIdade(rgData nasc, rgData hoje)
+{
+  int idade;
+
+  idade = hoje.ano - nasc.ano;
+  if ((hoje.mes < nasc.mes) || (hoje.mes == nasc.mes) && (hoje.dia < nasc.dia))
+    idade = idade - 1;
+  return (idade);
 }
 
 void atribuiComorbidade(Paciente novoPaciente)
@@ -136,19 +176,28 @@ void geraArquivoSemComorbidade(Paciente novoPaciente)
 {
   FILE *pacientesArquivo = fopen("sem-comorbidade.txt", "a");
 
-  fprintf(pacientesArquivo, "%s,%d,%s,%s,%s,%s\n",
+  fprintf(pacientesArquivo, "%s,%d,%s,%s,%d/%d/%d,%d/%d/%d,%s,%s,%s,%s\n",
           novoPaciente.nome,
           novoPaciente.idade,
           novoPaciente.cpf,
-          novoPaciente.telefone,
+          novoPaciente.email,
+          novoPaciente.dataNascimento.dia,
+          novoPaciente.dataNascimento.mes,
+          novoPaciente.dataNascimento.ano,
+          novoPaciente.dataDiagnostico.dia,
+          novoPaciente.dataDiagnostico.mes,
+          novoPaciente.dataDiagnostico.ano,
+          novoPaciente.cep,
           novoPaciente.endereco,
-          novoPaciente.cep);
+          novoPaciente.telefone,
+          novoPaciente.comorbidade);
 
   fclose(pacientesArquivo);
 }
 
 void geraArquivoComComorbidade(Paciente novoPaciente)
 {
+
   FILE *pacientesArquivo = fopen("comorbidade.txt", "a");
 
   fprintf(pacientesArquivo, "%d,%s\n",
@@ -160,13 +209,12 @@ void geraArquivoComComorbidade(Paciente novoPaciente)
 
 void cadastrar()
 {
-  system("cls");
-
   int op;
   do
   {
 
     Paciente novoPaciente;
+    novoPaciente.comorbidade[0] = "a";
 
     system("cls");
     printf("\n---- Cadastrando paciente -----\n");
@@ -174,16 +222,29 @@ void cadastrar()
     fgets(novoPaciente.nome, sizeof(novoPaciente.nome), stdin);
     fflush(stdin);
 
-    printf("\nIdade:");
-    scanf("%d", &novoPaciente.idade);
+    novoPaciente.dataNascimento = entradaRgData("\nData de nascimento");
     fflush(stdin);
 
-    printf("\nEndereço:");
-    fgets(novoPaciente.endereco, sizeof(novoPaciente.endereco), stdin);
+    novoPaciente.dataDiagnostico = entradaRgData("\nData de diagnostico");
+    fflush(stdin);
+
+    novoPaciente.idade = calculaIdade(novoPaciente.dataNascimento, novoPaciente.dataDiagnostico);
+    fflush(stdin);
+
+    printf("\nCpf:");
+    scanf("%s", &novoPaciente.cpf);
+    fflush(stdin);
+
+    printf("\nE-mail:");
+    scanf("%s", &novoPaciente.email);
     fflush(stdin);
 
     printf("\nCep:");
     scanf("%s", &novoPaciente.cep);
+    fflush(stdin);
+
+    printf("\nEndereço:");
+    fgets(novoPaciente.endereco, sizeof(novoPaciente.endereco), stdin);
     fflush(stdin);
 
     printf("\nTelefone:");
@@ -191,7 +252,7 @@ void cadastrar()
 
     atribuiComorbidade(novoPaciente);
 
-    if (strcmp(novoPaciente.comorbidade, "sem comorbidade") != 0 && novoPaciente.idade >= 65)
+    if ((strcmp(novoPaciente.comorbidade, "sem comorbidade") != 0) && (novoPaciente.idade >= 65))
     {
       geraArquivoComComorbidade(novoPaciente);
     }
@@ -200,9 +261,15 @@ void cadastrar()
 
     printf("\nPaciente cadastrado com sucesso!\n");
 
-    printf("\n1 - Continuar\n0 - Sair\n");
+    printf("\n-_- Deseja continuar? -_-\n");
+    printf("\n1 - Continuar\n2 - Encerrar Sistema\n");
     scanf("%d", &op);
+
+    if (op == 2)
+    {
+      exit(0);
+    }
     getchar();
 
-  } while (op != 0);
+  } while (op == 1);
 }
