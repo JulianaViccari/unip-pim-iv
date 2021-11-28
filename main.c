@@ -23,10 +23,14 @@ typedef struct
   char email[60];
   int ativo;
   int idade;
+  int temComorbidade; // 0 - nao tem | 1 - tem
   rgData dataNascimento;
   rgData dataDiagnostico;
   char comorbidade[20];
 } Paciente;
+
+char comorbidadeGlobal[20];
+int temComorbidadeGlobal;
 
 Paciente pacientes[quantidade];
 
@@ -45,7 +49,7 @@ void welcome();
 void altenticacao(); //prototipo da funcao
 void menu();
 void cadastrar();
-void atribuiComorbidade(Paciente novoPaciente);
+void atribuiComorbidade();
 void geraArquivoComComorbidade(Paciente novoPaciente);
 void geraArquivoSemComorbidade(Paciente novoPaciente);
 
@@ -54,7 +58,7 @@ int main(int arg, char const *argv[])
 
   welcome();
 
-  altenticacao();
+  //altenticacao();
 
   menu();
 
@@ -130,7 +134,7 @@ int calculaIdade(rgData nasc, rgData hoje)
   return (idade);
 }
 
-void atribuiComorbidade(Paciente novoPaciente)
+void atribuiComorbidade()
 {
   int temComorbidade;
 
@@ -141,6 +145,7 @@ void atribuiComorbidade(Paciente novoPaciente)
   if (temComorbidade == 1)
   {
     int comorbidade;
+    temComorbidadeGlobal = 1;
 
     printf("\nQual a comorbidade do paciente?\n1 - Diabetes\n2 - Obesidade\n3 - Hipertensão\n4 - Tuberculose\n5 - Outros\n");
     printf("Opção: ");
@@ -149,32 +154,33 @@ void atribuiComorbidade(Paciente novoPaciente)
     switch (comorbidade)
     {
     case 1:
-      strcpy(novoPaciente.comorbidade, "diabetes");
+      strcpy(comorbidadeGlobal, "diabetes");
       break;
     case 2:
-      strcpy(novoPaciente.comorbidade, "obesidade");
+      strcpy(comorbidadeGlobal, "obesidade");
       break;
     case 3:
-      strcpy(novoPaciente.comorbidade, "hipertensão");
+      strcpy(comorbidadeGlobal, "hipertensão");
       break;
     case 4:
-      strcpy(novoPaciente.comorbidade, "tuberculose");
+      strcpy(comorbidadeGlobal, "tuberculose");
       break;
 
     default:
-      strcpy(novoPaciente.comorbidade, "outros");
+      strcpy(comorbidadeGlobal, "outros");
       break;
     }
   }
   else
   {
-    strcpy(novoPaciente.comorbidade, "sem comorbidade");
+    strcpy(comorbidadeGlobal, "sem comorbidade");
+    temComorbidadeGlobal = 0;
   }
 }
 
 void geraArquivoSemComorbidade(Paciente novoPaciente)
 {
-  FILE *pacientesArquivo = fopen("sem-comorbidade.txt", "a");
+  FILE *pacientesArquivo = fopen("cadastro.txt", "a");
 
   fprintf(pacientesArquivo, "%s,%d,%s,%s,%d/%d/%d,%d/%d/%d,%s,%s,%s,%s\n",
           novoPaciente.nome,
@@ -190,7 +196,7 @@ void geraArquivoSemComorbidade(Paciente novoPaciente)
           novoPaciente.cep,
           novoPaciente.endereco,
           novoPaciente.telefone,
-          novoPaciente.comorbidade);
+          comorbidadeGlobal);
 
   fclose(pacientesArquivo);
 }
@@ -198,7 +204,7 @@ void geraArquivoSemComorbidade(Paciente novoPaciente)
 void geraArquivoComComorbidade(Paciente novoPaciente)
 {
 
-  FILE *pacientesArquivo = fopen("comorbidade.txt", "a");
+  FILE *pacientesArquivo = fopen("grupo-de-risco.txt", "a");
 
   fprintf(pacientesArquivo, "%d,%s\n",
           novoPaciente.idade,
@@ -214,7 +220,7 @@ void cadastrar()
   {
 
     Paciente novoPaciente;
-    novoPaciente.comorbidade[0] = "a";
+    novoPaciente.temComorbidade = 0;
 
     system("cls");
     printf("\n---- Cadastrando paciente -----\n");
@@ -250,9 +256,11 @@ void cadastrar()
     printf("\nTelefone:");
     fgets(novoPaciente.telefone, sizeof(novoPaciente.telefone), stdin);
 
-    atribuiComorbidade(novoPaciente);
+    atribuiComorbidade();
+    printf("COMORBIDADE %s", comorbidadeGlobal);
+    printf(".......FLAG %d", temComorbidadeGlobal);
 
-    if ((strcmp(novoPaciente.comorbidade, "sem comorbidade") != 0) && (novoPaciente.idade >= 65))
+    if ((temComorbidadeGlobal == 1) || (novoPaciente.idade > 65))
     {
       geraArquivoComComorbidade(novoPaciente);
     }
