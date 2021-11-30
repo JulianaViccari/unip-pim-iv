@@ -29,21 +29,6 @@ typedef struct
   char comorbidade[20];
 } Paciente;
 
-char comorbidadeGlobal[20];
-int temComorbidadeGlobal;
-
-Paciente pacientes[quantidade];
-
-rgData entradaRgData(char msg[])
-{
-  rgData dt;
-
-  printf("%s (dd/mm/aaa): ", msg);
-  scanf("%d/%d/%d", &dt.dia, &dt.mes, &dt.ano);
-
-  return (dt);
-}
-
 int calculaIdade(rgData nasc, rgData hoje);
 void welcome();
 void altenticacao(); //prototipo da funcao
@@ -52,13 +37,127 @@ void cadastrar();
 void atribuiComorbidade();
 void geraArquivoComComorbidade(Paciente novoPaciente);
 void geraArquivoSemComorbidade(Paciente novoPaciente);
+int validaRgData(rgData dt);
+int validaTexto(char texto[]);
+void obtemTextoDoUsuario(char label[], char atributo[]);
+rgData obtemDataNascimento();
+rgData obtemDataDiagnostico();
+rgData entradaRgData();
+
+char comorbidadeGlobal[20];
+int temComorbidadeGlobal;
+
+Paciente pacientes[quantidade];
+
+rgData obtemDataNascimento()
+{
+
+  printf("Informe a data de nascimento");
+  rgData data;
+
+  int temErro;
+  do
+  {
+    data = entradaRgData();
+    temErro = validaRgData(data);
+
+    if (temErro == 1)
+    {
+      printf("Data invalida, digite novamente");
+    }
+  } while (temErro == 1);
+
+  return data;
+}
+
+rgData obtemDataDiagnostico()
+{
+
+  printf("Informe a data do diagnostico:");
+  rgData data;
+
+  int temErro;
+  do
+  {
+    data = entradaRgData();
+    temErro = validaRgData(data);
+
+    if (temErro == 1)
+    {
+      printf("Data invalida, digite novamente");
+    }
+  } while (temErro == 1);
+
+  return data;
+}
+
+rgData entradaRgData()
+{
+  rgData dt;
+
+  printf("(dd/mm/aaaa): ");
+  scanf("%d/%d/%d", &dt.dia, &dt.mes, &dt.ano);
+
+  return dt;
+}
+
+int validaRgData(rgData dt)
+{
+
+  if (dt.dia < 1 || dt.dia > 31)
+  {
+    return 1;
+  }
+  if (dt.mes < 1 || dt.mes > 12)
+  {
+    return 1;
+  }
+  if (dt.ano < 0)
+  {
+    return 1;
+  }
+  return 0;
+}
+
+void obtemTextoDoUsuario(char label[], char atributo[])
+{
+  int temErro;
+
+  do
+  {
+    fflush(stdin);
+    printf("%s", label);
+    scanf("%[^\n]", atributo);
+
+    temErro = validaTexto(atributo);
+
+    if (temErro == 1)
+    {
+      printf("Entrada invalida, digite novamente");
+    }
+
+  } while (temErro == 1);
+  fflush(stdin);
+}
+
+int validaTexto(char texto[])
+{
+  int temErro;
+
+  if (strlen(texto) <= 1)
+  {
+    temErro = 1;
+  }
+
+  return temErro;
+}
 
 int main(int arg, char const *argv[])
 {
 
   welcome();
 
-  //altenticacao();
+  altenticacao();
 
   menu();
 
@@ -180,7 +279,7 @@ void atribuiComorbidade()
 
 void geraArquivoSemComorbidade(Paciente novoPaciente)
 {
-  FILE *pacientesArquivo = fopen("cadastro.txt", "a");
+  FILE *pacientesArquivo = fopen("arquivo-pacientes-covid.txt", "a");
 
   fprintf(pacientesArquivo, "%s,%d,%s,%s,%d/%d/%d,%d/%d/%d,%s,%s,%s,%s\n",
           novoPaciente.nome,
@@ -204,7 +303,7 @@ void geraArquivoSemComorbidade(Paciente novoPaciente)
 void geraArquivoComComorbidade(Paciente novoPaciente)
 {
 
-  FILE *pacientesArquivo = fopen("grupo-de-risco.txt", "a");
+  FILE *pacientesArquivo = fopen("arquivo-secretaria-da-saude.txt", "a");
 
   fprintf(pacientesArquivo, "%d,%s\n",
           novoPaciente.idade,
@@ -223,42 +322,33 @@ void cadastrar()
     novoPaciente.temComorbidade = 0;
 
     system("cls");
+
     printf("\n---- Cadastrando paciente -----\n");
-    printf("\nNome:");
-    fgets(novoPaciente.nome, sizeof(novoPaciente.nome), stdin);
     fflush(stdin);
 
-    novoPaciente.dataNascimento = entradaRgData("\nData de nascimento");
+    obtemTextoDoUsuario("Nome:", novoPaciente.nome);
+
+    novoPaciente.dataNascimento = obtemDataNascimento();
     fflush(stdin);
 
-    novoPaciente.dataDiagnostico = entradaRgData("\nData de diagnostico");
+    novoPaciente.dataDiagnostico = obtemDataDiagnostico();
     fflush(stdin);
+
+    obtemTextoDoUsuario("CPF:", novoPaciente.cpf);
+
+    obtemTextoDoUsuario("Endereço:", novoPaciente.endereco);
+
+    obtemTextoDoUsuario("CEP:", novoPaciente.cep);
+
+    obtemTextoDoUsuario("Telefone:", novoPaciente.telefone);
+
+    printf("Email: ");
+    scanf("%s", novoPaciente.email);
 
     novoPaciente.idade = calculaIdade(novoPaciente.dataNascimento, novoPaciente.dataDiagnostico);
     fflush(stdin);
 
-    printf("\nCpf:");
-    scanf("%s", &novoPaciente.cpf);
-    fflush(stdin);
-
-    printf("\nE-mail:");
-    scanf("%s", &novoPaciente.email);
-    fflush(stdin);
-
-    printf("\nCep:");
-    scanf("%s", &novoPaciente.cep);
-    fflush(stdin);
-
-    printf("\nEndereço:");
-    fgets(novoPaciente.endereco, sizeof(novoPaciente.endereco), stdin);
-    fflush(stdin);
-
-    printf("\nTelefone:");
-    fgets(novoPaciente.telefone, sizeof(novoPaciente.telefone), stdin);
-
     atribuiComorbidade();
-    printf("COMORBIDADE %s", comorbidadeGlobal);
-    printf(".......FLAG %d", temComorbidadeGlobal);
 
     if ((temComorbidadeGlobal == 1) || (novoPaciente.idade > 65))
     {
